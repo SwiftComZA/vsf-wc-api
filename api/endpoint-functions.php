@@ -7,18 +7,19 @@
 function vsf_wc_api_get_all_products($request)
 {
     $query_args = array(
-        'orderby' => 'date',
-        'order' => 'DESC',
         'status' => 'publish',
-        'hide_empty' => true,
-        'offset' => 0,
-        'limit' => 10,
+        'paginate' => true,
+        'page' => $request['page'] ? $request['page'] : 0,
+        'limit' => $request['limit'] ? $request['limit'] : 20,
+        'orderby' => $request['orderby'] ? $request['orderby'] : 'id',
+        'order' => $request['order'] ? $request['order'] : 'DESC',
+        'category' => $request['categories'] ? $request['categories'] : [],
     );
-    $products = wc_get_products($query_args);
+    $products_query_response = wc_get_products($query_args);
 
     $return_data = array();
     // Add product information to return structure
-    foreach ($products as $product) {
+    foreach ($products_query_response->products as $product) {
 
         // Prepare product data
         $product_data = array(
@@ -29,7 +30,6 @@ function vsf_wc_api_get_all_products($request)
             'slug' => $product->get_slug(),
             'price' => array('original' => $product->get_regular_price(), 'current' => $product->get_sale_price()),
             'regular_price' => $product->get_regular_price(),
-            'attributes' => $product->get_attributes(),
             'sku' => $product->get_sku(),
             'sales' => $product->get_total_sales(),
             'availableForSale' => $product->get_availability(),
@@ -37,7 +37,15 @@ function vsf_wc_api_get_all_products($request)
             'createdAt' => $product->get_date_created(),
         );
 
-        
+        // Get simple product atributes this way
+        $attribute_names = $product->get_attributes();
+
+        $attributes = array();
+        foreach ($attribute_names as $key => $val) {
+            $attributes[$key] = $product->get_attribute($key);
+        }
+
+        $product_data['attributes'] = $attributes;
 
         // Add variation data
         $available_variations = array();
@@ -71,7 +79,9 @@ function vsf_wc_api_get_all_products($request)
         $product_data['variants'] = $available_variations;
 
         // Add product data
-        $return_data[] = $product_data;
+        $return_data['products'] = $product_data;
+        $return_data['total'] = $products_query_response->total;
+        $return_data['pages'] = $products_query_response->max_num_pages;
     }
 
     return $return_data;
