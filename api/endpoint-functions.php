@@ -16,6 +16,18 @@ function vsf_wc_api_get_all_products($request)
         'order' => $request['order'] ? $request['order'] : 'DESC',
         'category' => $request['categories'] ? $request['categories'] : [],
     );
+
+    // Get all global attributes
+    $atts = wc_get_attribute_taxonomies();
+
+    // Check request for attributes and add them to the query
+    foreach($atts as $key => $value) {
+        if ($request[$value->attribute_name]) {
+            $query_args[$value->attribute_name] = $request[$value->attribute_name];
+        }
+    }
+
+    // Get products query
     $products_query_response = wc_get_products($query_args);
 
     // Prepare products array
@@ -105,3 +117,26 @@ function vsf_wc_api_get_all_products($request)
 
     return $return_data;
 }
+
+// *************************************************************
+//  Add all global attributes to product query taxonomy
+// *************************************************************
+function filter_add_custom_query_taxonomies( $query, $query_vars ) {
+    // Get all global attributes
+    $atts = wc_get_attribute_taxonomies();
+
+    // Add them to query
+    foreach($atts as $key => $value) {
+        if (!empty($query_vars[$value->attribute_name])) {
+            $query['tax_query'][] = array(
+                'taxonomy' => 'pa_' . $value->attribute_name,
+                'field'    => 'slug',
+                'terms'    => $query_vars[$value->attribute_name],
+                'operator' => 'IN',
+            );
+        }
+    }
+
+	return $query;
+}
+add_filter( 'woocommerce_product_data_store_cpt_get_products_query', 'filter_add_custom_query_taxonomies', 10, 2 );
