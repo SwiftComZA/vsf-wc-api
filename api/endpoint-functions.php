@@ -6,6 +6,7 @@
 // *************************************************************
 function vsf_wc_api_get_all_products($request)
 {
+    // Prepare the WC query arguments
     $query_args = array(
         'status' => 'publish',
         'paginate' => true,
@@ -17,10 +18,10 @@ function vsf_wc_api_get_all_products($request)
     );
     $products_query_response = wc_get_products($query_args);
 
-    $return_data = array();
-    // Add product information to return structure
-    foreach ($products_query_response->products as $product) {
+    // Prepare products array
+    $products_array = array();
 
+    foreach ($products_query_response->products as $product) {
         // Prepare product data
         $product_data = array(
             'id' => $product->get_id(),
@@ -35,9 +36,18 @@ function vsf_wc_api_get_all_products($request)
             'availableForSale' => $product->get_availability(),
             'updatedAt' => $product->get_date_modified(),
             'createdAt' => $product->get_date_created(),
+            'cover_image' => wp_get_attachment_image_url($product->get_image_id(), "full"),
         );
 
-        // Get simple product atributes this way
+        // Get product gallery image urls
+        $gallery_images = array();
+
+        foreach ($product->get_gallery_image_ids() as $gallery_image_id) {
+            $gallery_images[] = wp_get_attachment_image_url($gallery_image_id, "full");
+        }
+        $product_data['images'] = $gallery_images;
+
+        // Get parent product atributes this way
         $attribute_names = $product->get_attributes();
 
         $attributes = array();
@@ -70,19 +80,28 @@ function vsf_wc_api_get_all_products($request)
                     'availableForSale' => $variation->get_availability(),
                     'updatedAt' => $variation->get_date_modified(),
                     'createdAt' => $variation->get_date_created(),
+                    'cover_image' => wp_get_attachment_image_url($variation->get_image_id(), "full"),
+                    'parent' => $variation->get_parent_id(),
                 );
 
-                // Add variation to array
+                // Add variations to array
                 $available_variations[] = $variation_data;
             }
         }
         $product_data['variants'] = $available_variations;
 
-        // Add product data
-        $return_data['products'] = $product_data;
-        $return_data['total'] = $products_query_response->total;
-        $return_data['pages'] = $products_query_response->max_num_pages;
+        // Add product data to array
+        $products_array[] = $product_data;
+
     }
+
+    // Prepare return data
+    $return_data = array();
+
+    // Add product and pagination data to return object
+    $return_data['products'] = $products_array;
+    $return_data['total'] = $products_query_response->total;
+    $return_data['pages'] = $products_query_response->max_num_pages;
 
     return $return_data;
 }
