@@ -47,7 +47,6 @@ function vsf_format_product($product) {
         'description' => $product->get_description(),
         'slug' => $product->get_slug(),
         'price' => array('original' => $product->get_regular_price(), 'current' => $product->get_sale_price()),
-        'regularPrice' => $product->get_regular_price(),
         'sku' => $product->get_sku(),
         'sales' => $product->get_total_sales(),
         'inStock' => $product->is_in_stock(),
