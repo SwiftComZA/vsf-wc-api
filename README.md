@@ -18,3 +18,7 @@
 <p align="center">
     This WordPress plugin integrates WooCommerce with Vue Storefront.
 </p>
+
+<p>
+Note: This plugin has no major release yet and is not published. You will have to add this plugin manually to your WordPress backend.
+</p>
