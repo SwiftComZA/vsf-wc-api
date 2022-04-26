@@ -22,3 +22,35 @@
 <p>
 Note: This plugin has no major release yet and is not published. You will have to add this plugin manually to your WordPress backend.
 </p>
+
+## Community contribution
+
+Want to contribute? Ping us on `woocommerce` channel on [Vue Storefront's Discord](https://discord.vuestorefront.io)!
+
+## Resources
+
+- [Vue Storefront WooCommerce Integration](https://github.com/vuestorefront-community/woocommerce)
+- [Vue Storefront Documentation](https://docs.vuestorefront.io/v2/)
+- [Community Chat](https://discord.vuestorefront.io)
+
+## Support
+
+If you have any questions about this integration we will be happy to answer them on `woocommerce` channel on [Vue Storefront's Discord](discord.vuestorefront.io).
+
+## Contributors ✨
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+   <td align="center"><a href="https://github.com/jack-of-blades"><img src="https://avatars.githubusercontent.com/u/48649182?s=96&v=4" width="80px;" alt=""/><br /><sub><b>jack-of-blades</b></sub></a><br /><a href="https://github.com/vuestorefront/woocommerce/commits?author=jack-of-blades" title="Code">💻</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
