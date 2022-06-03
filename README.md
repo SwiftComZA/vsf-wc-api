@@ -13,7 +13,7 @@
 
 
 <h3 align="center">
-  Vue Storefront WooCommerce Integration
+  Vue Storefront WooCommerce Plugin
 </h3>
 <p align="center">
     This WordPress plugin integrates WooCommerce with Vue Storefront.
@@ -44,7 +44,10 @@ If you have any questions about this integration we will be happy to answer them
 <!-- markdownlint-disable -->
 <table>
   <tr>
-   <td align="center"><a href="https://github.com/jack-of-blades"><img src="https://avatars.githubusercontent.com/u/48649182?s=96&v=4" width="80px;" alt=""/><br /><sub><b>jack-of-blades</b></sub></a><br /><a href="https://github.com/vuestorefront/woocommerce/commits?author=jack-of-blades" title="Code">💻</a></td>
+   <td align="center"><a href="https://github.com/jack-of-blades"><img src="https://avatars.githubusercontent.com/u/48649182?s=96&v=4" width="80px;" alt=""/><br /><sub><b>jack-of-blades</b></sub></a><br /><a href="https://github.com/SwiftComZA/vsf-wc-api/commits?author=jack-of-blades" title="Code">💻</a></td>
+  </tr>
+  <tr>
+   <td align="center"><a href="https://github.com/stephan-swiftcom"><img src="https://avatars.githubusercontent.com/u/64531851?v=4" width="80px;" alt=""/><br /><sub><b>stephan-swiftcom</b></sub></a><br /><a href="https://github.com/SwiftComZA/vsf-wc-api/commits?author=stephan-swiftcom" title="Code">💻</a></td>
   </tr>
 </table>
 
