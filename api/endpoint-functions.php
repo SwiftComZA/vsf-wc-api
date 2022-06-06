@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__FILE__) . '/product-functions.php';
 
 // *************************************************************
 //  The GET to /products endpoint - NOT AUTHENTICATED (yet)
@@ -6,83 +7,153 @@
 // *************************************************************
 function vsf_wc_api_get_all_products($request)
 {
+    // Prepare the WC query arguments
     $query_args = array(
         'status' => 'publish',
-        'paginate' => true,
-        'page' => $request['page'] ? $request['page'] : 0,
+        'paginate' => $request['facet'] && $request['facet'] == 'true' ? true : false,
+        'page' => $request['page'] ? $request['page'] : 1,
         'limit' => $request['limit'] ? $request['limit'] : 20,
         'orderby' => $request['orderby'] ? $request['orderby'] : 'id',
         'order' => $request['order'] ? $request['order'] : 'DESC',
         'category' => $request['categories'] ? $request['categories'] : [],
+        'include' => $request['id'] ? [$request['id']] : []
     );
-    $products_query_response = wc_get_products($query_args);
+
+    // Add all query parameters that starts with pa_ to the get products query
+    // This is so that the products can be filtered by any global attributes
+    foreach ($request->get_query_params() as $key => $value) { 
+        if (str_starts_with(sanitize_text_field($key), 'pa_')) {
+            $query_args[sanitize_text_field($key)] = explode(',', sanitize_text_field($value));
+        }
+    }
+
+    return vsf_product_query($query_args);
+}
+
+// *************************************************************
+//  The GET to /products/{id} endpoint - NOT AUTHENTICATED (yet)
+//  This endpoint exposes data to the frontend
+// *************************************************************
+function vsf_wc_api_get_single_product($request) {
+    // Prepare the WC query arguments
+    $query_args = array(
+        'status' => 'publish',
+        'paginate' => false,
+        'include' => [$request['id'] ? $request['id'] : -1]
+    );
+
+    return vsf_product_query($query_args);
+}
+
+
+
+// *************************************************************
+//  The GET to /categories endpoint - NOT AUTHENTICATED (yet)
+//  This endpoint exposes category data to the frontend
+// *************************************************************
+function vsf_wc_api_get_all_categories($request)
+{
+    // Prepare category query
+    $query_args = array(
+        'taxonomy' => 'product_cat',
+        'status' => 'publish',
+        'hide_empty' => true,
+        'offset' => $request['page'] ? $request['page'] : 0,
+        'number' => $request['limit'] ? $request['limit'] : 100,
+        'menu_order' => true
+    );
+    $items = get_terms($query_args);
 
     $return_data = array();
-    // Add product information to return structure
-    foreach ($products_query_response->products as $product) {
 
-        // Prepare product data
-        $product_data = array(
-            'id' => $product->get_id(),
-            'productType' => $product->get_type(),
-            'title' => $product->get_title(),
-            'description' => $product->get_description(),
-            'slug' => $product->get_slug(),
-            'price' => array('original' => $product->get_regular_price(), 'current' => $product->get_sale_price()),
-            'regular_price' => $product->get_regular_price(),
-            'sku' => $product->get_sku(),
-            'sales' => $product->get_total_sales(),
-            'availableForSale' => $product->get_availability(),
-            'updatedAt' => $product->get_date_modified(),
-            'createdAt' => $product->get_date_created(),
+    foreach ($items as $category) {
+        $return_data[] = array(
+            'type' => "category",
+            'id' => $category->term_id,
+            'title' => $category->name,
+            'description' => $category->description,
+            'slug' => $category->slug,
+            'count' => $category->count,
+            'parent_id' => $category->parent,
+            'category_slug_path' => get_term_parents_list($category->term_id, 'product_cat', array("format" => "slug", "separator" => "/", "link" => false)),
         );
-
-        // Get simple product atributes this way
-        $attribute_names = $product->get_attributes();
-
-        $attributes = array();
-        foreach ($attribute_names as $key => $val) {
-            $attributes[$key] = $product->get_attribute($key);
-        }
-
-        $product_data['attributes'] = $attributes;
-
-        // Add variation data
-        $available_variations = array();
-        if ($product->get_type() == 'variable') {
-            $variation_ids = $product->get_children();
-
-            // Iterate variations
-            foreach ($variation_ids as $variation_id) {
-                // Prepare variation data
-                $variation = wc_get_product($variation_id);
-                $variation_data = array(
-                    'id' => $variation->get_id(),
-                    'productType' => $variation->get_type(),
-                    'title' => $variation->get_title(),
-                    'description' => $variation->get_description(),
-                    'slug' => $variation->get_slug(),
-                    'price' => array('original' => $variation->get_regular_price(), 'current' => $variation->get_sale_price()),
-                    'regular_price' => $variation->get_regular_price(),
-                    'attributes' => $variation->get_attributes(),
-                    'sku' => $variation->get_sku(),
-                    'sales' => $variation->get_total_sales(),
-                    'availableForSale' => $variation->get_availability(),
-                    'updatedAt' => $variation->get_date_modified(),
-                    'createdAt' => $variation->get_date_created(),
-                );
-
-                // Add variation to array
-                $available_variations[] = $variation_data;
-            }
-        }
-        $product_data['variants'] = $available_variations;
-
-        // Add product data
-        $return_data['products'] = $product_data;
-        $return_data['total'] = $products_query_response->total;
-        $return_data['pages'] = $products_query_response->max_num_pages;
     }
 
     return $return_data;
 }
+
+
+// *************************************************************
+//  The GET to /facets endpoint - NOT AUTHENTICATED (yet)
+//  This endpoint returns available attributes
+// *************************************************************
+function vsf_wc_api_get_facets($request)
+{
+    // Prepare the WC query arguments
+    $query_args = array(
+        'status' => 'publish',
+        'limit' => -1,
+        'category' => $request['categories'] ? $request['categories'] : [],
+        'include' => $request['id'] ? [$request['id']] : []
+    );
+
+    // Add all query parameters that starts with pa_ to the get products query
+    // This is so that the products can be filtered by any global attributes
+    foreach ($request->get_query_params() as $key => $value) { 
+        if (str_starts_with(sanitize_text_field($key), 'pa_')) {
+            $query_args[sanitize_text_field($key)] = explode(',', sanitize_text_field($value));
+        }
+    }
+
+    $products = wc_get_products($query_args);
+
+
+    $facets = array();
+    
+    // Get facet data from attributes
+    foreach ($products as $product) {
+        $attributes = $product->get_attributes();
+
+        foreach ($attributes as $attribute => $v) {
+            $values = $product->get_attribute($attribute);
+            if (!array_key_exists($attribute, $facets)) {
+                $facets[$attribute] = array_map('trim', explode(',', $values));
+            }
+            else {
+                foreach (array_map('trim', explode(',', $values)) as $value) {
+                    if (!in_array($value, $facets[$attribute])) {
+                        array_push($facets[$attribute], $value);
+                    }
+                }
+            }
+        }
+    }
+
+    return $facets;
+
+}
+
+
+
+// *************************************************************
+//  Add all global attributes to product query taxonomy
+// *************************************************************
+function vsf_filter_add_custom_query_taxonomies( $query, $query_vars )
+{
+
+    // Add all parameters that start with pa_ to the taxonomy
+    // so that products can be queried by any global attributes
+    foreach($query_vars as $key => $value) {
+        if (str_starts_with($key, 'pa_')) {
+            $query['tax_query'][] = array(
+                'taxonomy' => $key,
+                'field'    => 'slug',
+                'terms'    => $value,
+                'operator' => 'IN',
+            );
+        }
+    }
+
+	return $query;
+}
+add_filter( 'woocommerce_product_data_store_cpt_get_products_query', 'vsf_filter_add_custom_query_taxonomies', 10, 2 );
