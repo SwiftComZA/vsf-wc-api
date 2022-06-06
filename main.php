@@ -28,4 +28,18 @@ function vsf_wc_api_init_rest_api()
         'callback' => 'vsf_wc_api_get_single_product',
         'permission_callback' => '__return_true',
     ));
+
+    // ************** Get all categories
+    register_rest_route('vsf-wc-api/v1', '/categories', array(
+        'methods' => 'GET',
+        'callback' => 'vsf_wc_api_get_all_categories',
+        'permission_callback' => '__return_true',
+    ));
+
+    // ************** Get facets
+    register_rest_route('vsf-wc-api/v1', '/facets', array(
+        'methods' => 'GET',
+        'callback' => 'vsf_wc_api_get_facets',
+        'permission_callback' => '__return_true',
+    ));
 }

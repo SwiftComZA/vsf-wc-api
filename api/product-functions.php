@@ -10,6 +10,11 @@ function vsf_product_query($query) {
     // If the paginate query parameter is true, the response from wc_get_products() looks different
     $products = $query['paginate'] ? $products_query_response->products : $products_query_response;
 
+    // This function is needed if we want to order by price
+    if (strtolower($query['orderby']) == 'price') {
+        $products = wc_products_array_orderby($products, 'price', $query['order']);
+    }
+
     // Prepare products array
     $products_array = array();
 
