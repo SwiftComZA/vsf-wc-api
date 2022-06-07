@@ -115,22 +115,27 @@ function vsf_wc_api_get_facets($request)
         $attributes = $product->get_attributes();
 
         foreach ($attributes as $attribute => $v) {
-            $values = $product->get_attribute($attribute);
+            $values = $v->get_slugs();
+            $terms = $v->get_terms();
             if (!array_key_exists($attribute, $facets)) {
                 $facets[$attribute]['title'] = wc_attribute_label( $attribute );
                 $facets[$attribute]['id'] = $attribute;
                 $facets[$attribute]['values'] = array();
-                foreach (array_map('trim', explode(',', $values)) as $value) {
-                    $facets[$attribute]['values'][$value] = 1;
+                foreach ($values as $index=>$value) {
+                    if ($terms != null) {
+                        $facets[$attribute]['values'][$value] = array('title' => $terms[$index]->name, 'count' => 1);
+                    }
                 }
             }
             else {
-                foreach (array_map('trim', explode(',', $values)) as $value) {
+                foreach ($values as $index=>$value) {
                     if (!array_key_exists($value, $facets[$attribute]['values'])) {
-                    $facets[$attribute]['values'][$value] = 1;
+                        if ($terms != null) {
+                            $facets[$attribute]['values'][$value] = array('title' => $terms[$index]->name, 'count' => 1);
+                        }
                     }
                     else {
-                        ++$facets[$attribute]['values'][$value];
+                        ++$facets[$attribute]['values'][$value]['count'];
                     }
                 }
             }
