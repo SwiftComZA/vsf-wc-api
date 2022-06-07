@@ -10,7 +10,7 @@ function vsf_wc_api_get_all_products($request)
     // Prepare the WC query arguments
     $query_args = array(
         'status' => 'publish',
-        'paginate' => $request['facet'] && $request['facet'] == 'true' ? true : false,
+        'paginate' => $request['paginate'] && $request['paginate'] == 'true' ? true : false,
         'page' => $request['page'] ? $request['page'] : 1,
         'limit' => $request['limit'] ? $request['limit'] : 20,
         'orderby' => $request['orderby'] ? $request['orderby'] : 'id',
@@ -117,12 +117,20 @@ function vsf_wc_api_get_facets($request)
         foreach ($attributes as $attribute => $v) {
             $values = $product->get_attribute($attribute);
             if (!array_key_exists($attribute, $facets)) {
-                $facets[$attribute] = array_map('trim', explode(',', $values));
+                $facets[$attribute]['title'] = wc_attribute_label( $attribute );
+                $facets[$attribute]['id'] = $attribute;
+                $facets[$attribute]['values'] = array();
+                foreach (array_map('trim', explode(',', $values)) as $value) {
+                    $facets[$attribute]['values'][$value] = 1;
+                }
             }
             else {
                 foreach (array_map('trim', explode(',', $values)) as $value) {
-                    if (!in_array($value, $facets[$attribute])) {
-                        array_push($facets[$attribute], $value);
+                    if (!array_key_exists($value, $facets[$attribute]['values'])) {
+                    $facets[$attribute]['values'][$value] = 1;
+                    }
+                    else {
+                        ++$facets[$attribute]['values'][$value];
                     }
                 }
             }

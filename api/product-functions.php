@@ -32,6 +32,8 @@ function vsf_product_query($query) {
         $return_data['products'] = $products_array;
         $return_data['total'] = $products_query_response->total;
         $return_data['pages'] = $products_query_response->max_num_pages;
+        $return_data['page'] = intval($query['page']);
+        $return_data['perPage'] = intval($query['limit']);
     }
     else {
         $return_data = $products_array;
