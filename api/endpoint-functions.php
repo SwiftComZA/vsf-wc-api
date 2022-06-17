@@ -15,7 +15,7 @@ function vsf_wc_api_get_all_products($request)
         'limit' => $request['limit'] ? $request['limit'] : 20,
         'orderby' => $request['orderby'] ? $request['orderby'] : 'id',
         'order' => $request['order'] ? $request['order'] : 'DESC',
-        'category' => $request['categories'] ? $request['categories'] : [],
+        'category' => $request['categories'] ? explode(',', sanitize_text_field($request['categories'])) : [],
         'include' => $request['id'] ? [$request['id']] : []
     );
 
@@ -97,17 +97,34 @@ function vsf_wc_api_get_facets($request)
         'include' => $request['id'] ? [$request['id']] : []
     );
 
+    $filters = array();
+
     // Add all query parameters that starts with pa_ to the get products query
     // This is so that the products can be filtered by any global attributes
     foreach ($request->get_query_params() as $key => $value) { 
         if (str_starts_with(sanitize_text_field($key), 'pa_')) {
-            $query_args[sanitize_text_field($key)] = explode(',', sanitize_text_field($value));
+            $filters[$key] = explode(',', sanitize_text_field($value));
         }
     }
 
+    // If only one filter is selected, still show all values for that filter
+    if (sizeof($filters) === 1) {
+        foreach ($filters as $key => $value) { 
+            $query_args[$key] = [];
+            $terms = get_terms($key);
+            foreach ($terms as $term) {
+                array_push($query_args[$key], $term->slug);
+            }
+        }
+    }
+    // Else, show only availble filter values
+    else {   
+        foreach ($filters as $key => $value) { 
+            $query_args[$key] = $value;
+        }
+    }    
+
     $products = wc_get_products($query_args);
-
-
     $facets = array();
     
     // Get facet data from attributes
@@ -117,25 +134,23 @@ function vsf_wc_api_get_facets($request)
         foreach ($attributes as $attribute => $v) {
             $values = $v->get_slugs();
             $terms = $v->get_terms();
-            if (!array_key_exists($attribute, $facets)) {
-                $facets[$attribute]['title'] = wc_attribute_label( $attribute );
-                $facets[$attribute]['id'] = $attribute;
-                $facets[$attribute]['values'] = array();
-                foreach ($values as $index=>$value) {
-                    if ($terms != null) {
+            if ($terms != null) {
+                if (!array_key_exists($attribute, $facets)) {
+                    $facets[$attribute]['title'] = wc_attribute_label( $attribute );
+                    $facets[$attribute]['id'] = $attribute;
+                    $facets[$attribute]['values'] = array();
+                    foreach ($values as $index=>$value) {
                         $facets[$attribute]['values'][$value] = array('title' => $terms[$index]->name, 'count' => 1);
                     }
                 }
-            }
-            else {
-                foreach ($values as $index=>$value) {
-                    if (!array_key_exists($value, $facets[$attribute]['values'])) {
-                        if ($terms != null) {
+                else {
+                    foreach ($values as $index=>$value) {
+                        if (!array_key_exists($value, $facets[$attribute]['values'])) {
                             $facets[$attribute]['values'][$value] = array('title' => $terms[$index]->name, 'count' => 1);
                         }
-                    }
-                    else {
-                        ++$facets[$attribute]['values'][$value]['count'];
+                        else {
+                            ++$facets[$attribute]['values'][$value]['count'];
+                        }
                     }
                 }
             }
