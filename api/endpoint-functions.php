@@ -59,7 +59,7 @@ function vsf_wc_api_get_all_categories($request)
         'status' => 'publish',
         'hide_empty' => true,
         'offset' => $request['page'] ? $request['page'] : 0,
-        'number' => $request['limit'] ? $request['limit'] : 100,
+        'number' => $request['limit'] ? $request['limit'] : 0,
         'menu_order' => true
     );
     $items = get_terms($query_args);
@@ -70,7 +70,7 @@ function vsf_wc_api_get_all_categories($request)
         $return_data[] = array(
             'type' => "category",
             'id' => $category->term_id,
-            'title' => $category->name,
+            'title' => htmlspecialchars_decode($category->name),
             'description' => $category->description,
             'slug' => $category->slug,
             'count' => $category->count,

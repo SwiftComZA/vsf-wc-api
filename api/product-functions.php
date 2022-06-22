@@ -67,7 +67,7 @@ function vsf_format_product($product) {
     $formatted_product['categories'] = array();
     // Get product categories
     foreach($product->get_category_ids() as $category_id) {
-        $formatted_product['categories'][] =  get_term( $category_id, 'product_cat' )->slug;
+        $formatted_product['categories'][] =  get_term_parents_list($category_id, 'product_cat', array("format" => "slug", "separator" => "/", "link" => false));
     }
 
     // Get product gallery image urls
