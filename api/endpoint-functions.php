@@ -1,5 +1,7 @@
 <?php
 require_once dirname(__FILE__) . '/product-functions.php';
+require_once dirname(__FILE__) . '/account-functions.php';
+require_once dirname(__FILE__) . '/cart-functions.php';
 
 // *************************************************************
 //  The GET to /products endpoint - NOT AUTHENTICATED (yet)
@@ -161,6 +163,104 @@ function vsf_wc_api_get_facets($request)
 
 }
 
+
+// *************************************************************
+//  The POST to /register endpoint - NOT AUTHENTICATED (yet)
+//  This endpoint registers a new customer user
+// *************************************************************
+function vsf_wc_api_register_user( $request )
+{
+    // Verify request data
+    if (!sanitize_email($request['email'])) {
+        return new WP_Error('bad_request', 'Bad Request, email invalid', array('status' => 400));
+    }
+    if (!$request['password']) {
+        return new WP_Error('bad_request', 'Bad Request, password field missing', array('status' => 400));
+    }
+    if (!$request['firstName']) {
+        return new WP_Error('bad_request', 'Bad Request, firstName field missing', array('status' => 400));
+    }
+    if (!$request['lastName']) {
+        return new WP_Error('bad_request', 'Bad Request, lastName field missing', array('status' => 400));
+    }
+
+    // Verify this is a new user
+    $user = get_user_by('email', $request['email']);
+    if (!empty($user)) {
+        return new WP_Error('already_exists', 'Bad Request, user already exists', array('status' => 400));
+    }
+
+    // Register new customer
+    return vsf_register_user($request);
+}
+
+
+// *************************************************************
+//  The GET to /cart endpoint - EXPOSED
+//  Returns the cart to the customer browser
+// *************************************************************
+function vsf_wc_api_get_cart($request)
+{
+    // Load cart libraries
+    wc_load_cart();
+
+    // Return cart structure
+    return vsf_get_cart();
+}
+
+
+// *************************************************************
+//  The POST to /cart endpoint - EXPOSED
+//  Add a product, delete a product or update quantity
+// *************************************************************
+function vsf_wc_api_update_cart($request)
+{
+    // Load cart libraries
+    wc_load_cart();
+
+    // Verify cart method
+    if (!isset($request['cartMethod'])) {
+        return new WP_Error('bad_request', 'Bad request, no cartMethod variable provided (either add, remove or update)', array('status' => 400));
+    }
+    
+    // Verify quantity variable if provided
+    $quantity = 1;
+    if (isset($request['quantity'])) {
+        $quantity = intval($request['quantity']);
+    }
+
+    // Add to cart
+    if ($request['cartMethod'] == 'add') {
+        // Verify product ID
+        if (!isset($request['id'])) {
+            return new WP_Error('bad_request', 'Bad request, no product id provided', array('status' => 400));
+        }
+
+        return vsf_add_to_cart($request['id'], $quantity);
+    }
+
+    // Verify cart item key
+    if (!isset($request['key'])) {
+        return new WP_Error('bad_request', 'Bad request, no cart item key provided', array('status' => 400));
+    }
+
+    // Update product quantity
+    if ($request['cartMethod'] == 'update') {
+        if (!isset($request['quantity'])) {
+            return new WP_Error('bad_request', 'Bad request, no quantity provided for cart update', array('status' => 400));
+        }
+
+        return vsf_update_cart($request['key'], $quantity);
+    }
+
+    // Remove an item from the cart
+    if ($request['cartMethod'] == 'remove') {
+        return vsf_remove_from_cart($request['key']);
+    }
+
+    // Unkown cart method
+    return new WP_Error('bad_request', 'Bad request, unknown cartMethod provided (should be add, remove or update)', array('status' => 400));
+}
 
 
 // *************************************************************
