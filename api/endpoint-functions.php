@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__FILE__) . '/filters.php';
 require_once dirname(__FILE__) . '/product-functions.php';
 require_once dirname(__FILE__) . '/account-functions.php';
 require_once dirname(__FILE__) . '/cart-functions.php';
@@ -264,24 +265,124 @@ function vsf_wc_api_update_cart($request)
 
 
 // *************************************************************
-//  Add all global attributes to product query taxonomy
+//  The GET to /address/billing endpoint - AUTHENTICATED
 // *************************************************************
-function vsf_filter_add_custom_query_taxonomies( $query, $query_vars )
+function vsf_wc_api_get_billing_address($request)
 {
-
-    // Add all parameters that start with pa_ to the taxonomy
-    // so that products can be queried by any global attributes
-    foreach($query_vars as $key => $value) {
-        if (str_starts_with($key, 'pa_')) {
-            $query['tax_query'][] = array(
-                'taxonomy' => $key,
-                'field'    => 'slug',
-                'terms'    => $value,
-                'operator' => 'IN',
-            );
-        }
+    $user = wp_get_current_user();
+    if (!$user->exists()) {
+        return new WP_Error('no_user', 'You have to be logged in to fetch your address.', array('status' => 403));
     }
 
-	return $query;
+    $user_id = get_current_user_id();
+    $customer = new WC_Customer($user_id);
+    return vsf_get_customer_billing_address($customer);
 }
-add_filter( 'woocommerce_product_data_store_cpt_get_products_query', 'vsf_filter_add_custom_query_taxonomies', 10, 2 );
+
+
+// *************************************************************
+//  The GET to /address/shipping endpoint - AUTHENTICATED
+// *************************************************************
+function vsf_wc_api_get_shipping_address($request)
+{
+    $user = wp_get_current_user();
+    if (!$user->exists()) {
+        return new WP_Error('no_user', 'You have to be logged in to fetch your address.', array('status' => 403));
+    }
+
+    $user_id = get_current_user_id();
+    $customer = new WC_Customer($user_id);
+    return vsf_get_customer_shipping_address($customer);
+}
+
+
+// *************************************************************
+//  The POST to /address/billing endpoint - AUTHENTICATED
+// *************************************************************
+function vsf_wc_api_set_billing_address($request)
+{
+    // Load cart libraries
+    wc_load_cart();
+
+    // Authentication Check
+    $user = wp_get_current_user();
+    if (!$user->exists()) {
+        return new WP_Error('no_user', 'You have to be logged in to set your address.', array('status' => 403));
+    }
+
+    if (!$request['firstName']) {
+        return new WP_Error('no_first_name', 'Request body should contain firstName.', array('status' => 400));
+    }
+    if (!$request['lastName']) {
+        return new WP_Error('no_last_name', 'Request body should contain lastName.', array('status' => 400));
+    }
+    if (!$request['addressLine1']) {
+        return new WP_Error('no_address_line_1', 'Request body should contain an addressLine1.', array('status' => 400));
+    }
+    if (!$request['addressLine2']) {
+        return new WP_Error('no_address_line_2', 'Request body should contain an addressLine2.', array('status' => 400));
+    }
+    if (!$request['city']) {
+        return new WP_Error('no_city', 'Request body should contain city.', array('status' => 400));
+    }
+    if (!$request['postcode']) {
+        return new WP_Error('no_address_postcode', 'Request body should contain postcode.', array('status' => 400));
+    }
+    if (!$request['country']) {
+        return new WP_Error('no_address_state', 'Request body should contain country.', array('status' => 400));
+    }
+    if (!$request['state']) {
+        return new WP_Error('no_address_state', 'Request body should contain state.', array('status' => 400));
+    }
+
+    $user_id = get_current_user_id();
+    $customer = new WC_Customer($user_id);
+
+    return vsf_set_customer_billing_address($customer, $request);
+}
+
+
+// *************************************************************
+//  The POST to /address/shipping endpoint - AUTHENTICATED
+// *************************************************************
+function vsf_wc_api_set_shipping_address($request)
+{
+    // Load cart libraries
+    wc_load_cart();
+
+    // Authentication Check
+    $user = wp_get_current_user();
+    if (!$user->exists()) {
+        return new WP_Error('no_user', 'You have to be logged in to set your address.', array('status' => 403));
+    }
+
+    if (!$request['firstName']) {
+        return new WP_Error('no_first_name', 'Request body should contain firstName.', array('status' => 400));
+    }
+    if (!$request['lastName']) {
+        return new WP_Error('no_last_name', 'Request body should contain lastName.', array('status' => 400));
+    }
+    if (!$request['addressLine1']) {
+        return new WP_Error('no_address_line_1', 'Request body should contain an addressLine1.', array('status' => 400));
+    }
+    if (!$request['addressLine2']) {
+        return new WP_Error('no_address_line_2', 'Request body should contain an addressLine2.', array('status' => 400));
+    }
+    if (!$request['city']) {
+        return new WP_Error('no_city', 'Request body should contain city.', array('status' => 400));
+    }
+    if (!$request['postcode']) {
+        return new WP_Error('no_address_postcode', 'Request body should contain postcode.', array('status' => 400));
+    }
+    if (!$request['country']) {
+        return new WP_Error('no_address_state', 'Request body should contain country.', array('status' => 400));
+    }
+    if (!$request['state']) {
+        return new WP_Error('no_address_state', 'Request body should contain state.', array('status' => 400));
+    }
+
+    $user_id = get_current_user_id();
+    $customer = new WC_Customer($user_id);
+
+    return vsf_set_customer_shipping_address($customer, $request);
+}

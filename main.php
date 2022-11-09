@@ -50,17 +50,45 @@ function vsf_wc_api_init_rest_api()
         'permission_callback' => '__return_true',
     ));
 
-    // ************** Get cart
+    // ************** Get and update cart
     register_rest_route('vsf-wc-api/v1', '/cart', array(
-        'methods' => 'GET',
-        'callback' => 'vsf_wc_api_get_cart',
-        'permission_callback' => '__return_true',
+        array(
+            'methods' => 'GET',
+            'callback' => 'vsf_wc_api_get_cart',
+            'permission_callback' => '__return_true',
+        ),
+        array(
+            'methods' => 'POST',
+            'callback' => 'vsf_wc_api_update_cart',
+            'permission_callback' => '__return_true',
+        )
     ));
 
-    // ************** Update cart
-    register_rest_route('vsf-wc-api/v1', '/cart', array(
-        'methods' => 'POST',
-        'callback' => 'vsf_wc_api_update_cart',
-        'permission_callback' => '__return_true',
+    // ************** Get and set billing address
+    register_rest_route('vsf-wc-api/v1', '/address/billing', array(
+        array(
+            'methods' => 'GET',
+            'callback' => 'vsf_wc_api_get_billing_address',
+            'permission_callback' => '__return_true',
+        ),
+        array(
+            'methods' => 'POST',
+            'callback' => 'vsf_wc_api_set_billing_address',
+            'permission_callback' => '__return_true',
+        ),
+    ));
+
+    // ************** Get and set shipping address
+    register_rest_route('vsf-wc-api/v1', '/address/shipping', array(
+        array(
+            'methods' => 'GET',
+            'callback' => 'vsf_wc_api_get_shipping_address',
+            'permission_callback' => '__return_true',
+        ),
+        array(
+            'methods' => 'POST',
+            'callback' => 'vsf_wc_api_set_shipping_address',
+            'permission_callback' => '__return_true',
+        ),
     ));
 }
