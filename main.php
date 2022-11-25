@@ -91,4 +91,32 @@ function vsf_wc_api_init_rest_api()
             'permission_callback' => '__return_true',
         ),
     ));
+
+    // ************** Get shipping methods
+    register_rest_route('vsf-wc-api/v1', '/shipping', array(
+        'methods' => 'GET',
+        'callback' => 'vsf_wc_api_get_shipping_methods',
+        'permission_callback' => '__return_true',
+    ));
+
+    // ************** Get payment methods and initiate payment
+    register_rest_route('vsf-wc-api/v1', '/payment', array(
+        array(
+            'methods' => 'GET',
+            'callback' => 'vsf_wc_api_get_payment_methods',
+            'permission_callback' => '__return_true',
+        ),
+        array(
+            'methods' => 'POST',
+            'callback' => 'vsf_wc_api_make_payment',
+            'permission_callback' => '__return_true',
+        ),
+    ));
+
+    // ************** Get order
+    register_rest_route('vsf-wc-api/v1', '/order/(?P<id>\d+)', array(
+        'methods' => 'GET',
+        'callback' => 'vsf_wc_api_get_order',
+        'permission_callback' => '__return_true',
+    ));
 }

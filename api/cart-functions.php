@@ -17,8 +17,6 @@ function vsf_get_cart()
 
     // Get cart data
     $cart_response['contents'] = vsf_get_cart_contents($cart);
-    // $cart_response['cart_meta'] = wp_sea_saas_get_cart_meta($cart);
-    // $cart_response['wishlist_contents'] = wp_sea_saas_get_wishlist($user_id);
 
     // Return cart structure
     return $cart_response;
@@ -134,4 +132,59 @@ function vsf_remove_from_cart($item_key)
     $cart->remove_cart_item($item_key);
 
     return vsf_get_cart();
+}
+
+
+// *************************************************************
+//  Get Shipping Methods
+// *************************************************************
+function vsf_wc_api_get_shipping_methods()
+{
+    // Load cart libraries
+    wc_load_cart();
+
+    $data = array();
+
+    $cart = WC()->cart;
+
+    // Loop through shipping packages from WC_Session (They can be multiple in some cases)
+    foreach ( $cart->get_shipping_packages() as $package_id => $package ) {
+        // Check if a shipping for the current package exist
+        if ( WC()->session->__isset( 'shipping_for_package_'.$package_id ) ) {
+            // Loop through shipping rates for the current package
+            $data['shipping_for_package_'.$package_id] = array();
+            foreach ( WC()->session->get( 'shipping_for_package_'.$package_id )['rates'] as $shipping_rate_id => $shipping_rate ) {
+                $data['shipping_for_package_'.$package_id]['rate_id']     = $shipping_rate->get_id(); // same thing that $shipping_rate_id variable (combination of the shipping method and instance ID)
+                $data['shipping_for_package_'.$package_id]['method_id']   = $shipping_rate->get_method_id(); // The shipping method slug
+                $instance_id = $shipping_rate->get_instance_id(); // The instance ID
+                $data['shipping_for_package_'.$package_id]['label_name']  = $shipping_rate->get_label(); // The label name of the method
+                $data['shipping_for_package_'.$package_id]['cost']        = $shipping_rate->get_cost(); // The cost without tax
+                $tax_cost    = $shipping_rate->get_shipping_tax(); // The tax cost
+                $taxes       = $shipping_rate->get_taxes(); // The taxes details (array)
+            }
+        }
+    }
+
+    return $data;
+}
+
+
+// *************************************************************
+//  Get Payment Methods
+// *************************************************************
+function vsf_wc_api_get_payment_methods()
+{
+    $payment_methods = array();
+
+    foreach (WC()->payment_gateways()->get_available_payment_gateways() as $methods_key => $method) {
+        $formatted_payment_method = array();
+
+        $formatted_payment_method['id'] = $method->id;
+        $formatted_payment_method['title'] = $method->title;
+        $formatted_payment_method['description'] = $method->description;
+
+        $payment_methods[] =  $formatted_payment_method;
+    }
+
+    return $payment_methods;
 }

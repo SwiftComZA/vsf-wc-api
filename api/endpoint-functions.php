@@ -3,6 +3,7 @@ require_once dirname(__FILE__) . '/filters.php';
 require_once dirname(__FILE__) . '/product-functions.php';
 require_once dirname(__FILE__) . '/account-functions.php';
 require_once dirname(__FILE__) . '/cart-functions.php';
+require_once dirname(__FILE__) . '/payment-functions.php';
 
 // *************************************************************
 //  The GET to /products endpoint - NOT AUTHENTICATED (yet)
@@ -385,4 +386,73 @@ function vsf_wc_api_set_shipping_address($request)
     $customer = new WC_Customer($user_id);
 
     return vsf_set_customer_shipping_address($customer, $request);
+}
+
+
+// *************************************************************
+//  The POST to /payment endpoint - AUTHENTICATED
+// *************************************************************
+function vsf_wc_api_make_payment($request)
+{
+    // Load cart libraries
+    wc_load_cart();
+
+    // Authentication Check
+    $user = wp_get_current_user();
+    if (!$user->exists()) {
+        return new WP_Error('no_user', 'You have to be logged in to initiate payment.', array('status' => 403));
+    }
+
+    if (!$request['paymentMethod']) {
+        return new WP_Error('no_payment_method', 'Request body should contain paymentMethod.', array('status' => 400));
+    }
+    if (!$request['total']) {
+        return new WP_Error('no_total', 'Request body should contain the cart total.', array('status' => 400));
+    }
+
+    // Create order from cart
+    $order = vsf_create_order($request);
+
+    // Stop here if an error occured
+    if (is_wp_error($order)) {
+        return $order;
+    }
+    if (empty($order)) {
+        return new WP_Error('bad_order_number', 'The order to be paid is invalid', array('status' => 400));
+    }
+    
+    return vsf_init_order_payment($order, $request);
+}
+
+
+// *************************************************************
+//  The GET to /order/{{id}} endpoint - AUTHENTICATED
+// *************************************************************
+function vsf_wc_api_get_order($request)
+{
+
+    // Verify Authentication
+    $user = wp_get_current_user();
+    if (!$user->exists()) {
+        return new WP_Error('no_user', 'You have to be logged in to fetch your orders.', array('status' => 403));
+    }
+    // Verify request data
+    if (!$request['id']) {
+        return new WP_Error('no_order', 'Request body should contain order data.', array('status' => 400));
+    }
+    if (!intval($request['id'])) {
+        return new WP_Error('bad_order', 'Order ID should be an int.', array('status' => 400));
+    }
+
+    // Check if order provided is valid and belongs to customer
+    $order = wc_get_order($request['id']);
+    if (!$order) { // Valid order number?
+        return new WP_Error('bad_order_number', 'Order does not exist', array('status' => 400));
+    }
+    $user_id = get_current_user_id();
+    if ($order->get_customer_id() != $user_id) { // Does order belong to this user?
+        return new WP_Error('bad_order_number', 'Order does not belong to user', array('status' => 400));
+    }
+
+    return vsf_build_order_object($order);
 }
