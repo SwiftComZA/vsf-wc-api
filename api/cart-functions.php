@@ -58,7 +58,18 @@ function vsf_get_cart_contents($cart)
         $item_formatted['sku'] = $product->get_sku();
         $item_formatted['image'] = wp_get_attachment_image_url($product->get_image_id(), 'thumbnail');
 
+        // Add product attributes
+        $attribute_names = $product->get_attributes();
+
+        $attributes = array();
+        foreach ($attribute_names as $key => $val) {
+            $attributes[$key] = $product->get_attribute($key);
+        }
+
+        $item_formatted['attributes'] = $attributes;
+
         $formatted_cart_contents[] = $item_formatted;
+
     }
 
     // Return cart structure
